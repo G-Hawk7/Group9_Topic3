@@ -1,0 +1,2949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HELIOS - Advanced LMS Dashboard</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- D3.js for Charts -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fb;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Login Page Styles */
+        .login-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 0;
+        }
+        
+        .login-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            color: white;
+        }
+        
+        .login-left h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .login-left p {
+            font-size: 1.2rem;
+            text-align: center;
+            max-width: 500px;
+        }
+        
+        .login-right {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            border-radius: 20px 0 0 20px;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .login-form {
+            width: 80%;
+            max-width: 400px;
+            padding: 2rem;
+            border-radius: 10px;
+        }
+        
+        .login-form h2 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Dashboard Styles */
+        .dashboard {
+            display: none;
+            width: 100%;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            color: white;
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar-header h2 {
+            margin-left: 10px;
+        }
+        
+        .sidebar-menu {
+            padding: 1rem 0;
+        }
+        
+        .menu-item {
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 4px;
+            margin: 0 10px;
+            font-size: 1rem;
+        }
+
+        /* Styling for sub-menu items (courses) */
+        .menu-item.sub-item {
+            padding-left: 2.5rem;
+            font-size: 0.9rem;
+            opacity: 0.85;
+            margin: 0;
+            border-left: 4px solid transparent;
+            border-radius: 0;
+        }
+
+        .menu-item.sub-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid white;
+            margin-left: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .menu-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 10px;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .page-title {
+            font-size: 1.8rem;
+            color: var(--primary);
+            font-weight: 700;
+        }
+        
+        /* Dashboard Cards */
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .card-icon.user {
+            background-color: var(--primary);
+        }
+        
+        .card-icon.course {
+            background-color: var(--success);
+        }
+        
+        .card-icon.content {
+            background-color: var(--warning);
+        }
+        
+        .card-icon.assessment {
+            background-color: #7209b7;
+        }
+        
+        .card-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card-title {
+            color: var(--gray);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        /* Content Sections */
+        .content-section {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        th {
+            background-color: var(--light-gray);
+            color: var(--dark);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: #f1f3f6;
+        }
+        
+        .status {
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status.active, .status.success, .status.healthy {
+            background-color: rgba(76, 201, 240, 0.2);
+            color: var(--success);
+        }
+        
+        .status.pending, .status.warning {
+            background-color: rgba(247, 37, 133, 0.2);
+            color: var(--warning);
+        }
+
+        .status.danger, .status.error {
+            background-color: rgba(255, 0, 0, 0.1);
+            color: #d80000;
+        }
+
+        .status.completed {
+            background-color: rgba(67, 97, 238, 0.1);
+            color: var(--primary);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: var(--light-gray);
+            border-radius: 4px;
+            overflow: hidden;
+            width: 100px;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--success);
+        }
+        
+        .ai-insight {
+            background: linear-gradient(135deg, #7209b7, #3a0ca3);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ai-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .ai-title i {
+            margin-right: 10px;
+            font-size: 1.4rem;
+        }
+
+        /* Chart container styling for the graphs */
+        .chart-container {
+            width: 100%;
+            min-height: 350px;
+            background-color: #f8f8f8;
+            border-radius: 10px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-top: 1.5rem;
+            padding: 1rem;
+        }
+
+        .chart-container h3 {
+            color: var(--dark);
+            margin-bottom: 1rem;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .chart-svg {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            height: 300px;
+        }
+
+        
+        /* Search and Action Bar */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+        
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .search-box i {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.5rem 1rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        
+        .action-btn:hover {
+            background-color: var(--secondary);
+            transform: scale(1.05);
+        }
+        
+        .action-btn.delete {
+            background-color: var(--warning);
+        }
+        
+        .action-btn.delete:hover {
+            background-color: #d4146a;
+        }
+        
+        /* Role Badge */
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .role-student {
+            background-color: rgba(76, 201, 240, 0.2);
+            color: var(--success);
+        }
+        
+        .role-instructor, .role-faculty {
+            background-color: rgba(247, 37, 133, 0.2);
+            color: var(--warning);
+        }
+        
+        .role-admin, .role-finance {
+            background-color: rgba(67, 97, 238, 0.2);
+            color: var(--primary);
+        }
+        
+        .role-it {
+            background-color: rgba(114, 9, 183, 0.2);
+            color: #7209b7;
+        }
+
+        .action-icon {
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .action-icon:hover {
+            opacity: 0.8;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 80px;
+            }
+            
+            .sidebar-header h2, .menu-item span {
+                display: none;
+            }
+            
+            .menu-item {
+                justify-content: center;
+                padding: 1rem;
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .menu-item i {
+                margin-right: 0;
+                font-size: 1.4rem;
+            }
+            
+            .menu-item.active {
+                border-left: 4px solid white;
+                padding-left: 1rem;
+            }
+
+            .main-content {
+                margin-left: 80px;
+            }
+
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                max-width: 100%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .login-container {
+                flex-direction: column;
+            }
+            
+            .login-left, .login-right {
+                flex: none;
+            }
+            
+            .login-right {
+                border-radius: 20px 20px 0 0;
+                padding: 2rem 0;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .user-info {
+                margin-top: 1rem;
+            }
+
+            th, td {
+                padding: 0.75rem 0.5rem;
+                font-size: 0.9rem;
+            }
+
+            /* Hide less important columns on mobile */
+            table tr th:nth-child(3),
+            table tr td:nth-child(3) {
+                display: none;
+            }
+
+            .action-buttons {
+                flex-wrap: wrap;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-container" id="loginPage">
+        <div class="login-left">
+            <h1>HELIOS LMS</h1>
+            <p>Advanced LMS with analytics — demo. Leave fields empty and choose a role to proceed.</p>
+        </div>
+        <div class="login-right">
+            <div class="login-form">
+                <h2>Sign In</h2>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input id="email" type="email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input id="password" type="password" placeholder="Enter password">
+                </div>
+                <div class="form-group">
+                    <label for="role">Select Role</label>
+                    <select id="role">
+                        <option value="">Select Role (demo)</option>
+                        <option value="student">Student</option>
+                        <option value="instructor">Instructor</option>
+                        <option value="admin">Administrator</option>
+                        <option value="it">IT Officer</option>
+                        <option value="finance">Finance Officer</option>
+                    </select>
+                </div>
+                <button id="loginBtn" class="btn">Sign In</button>
+                <p style="text-align:center;margin-top:1rem;color:var(--gray)">Demo: choose role and sign in</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Dashboard -->
+    <div class="dashboard" id="studentDashboard" aria-hidden="true">
+        <div class="container">
+            <div class="sidebar" data-role="student">
+                <div class="sidebar-header"><i class="fas fa-graduation-cap fa-2x"></i><h2>HELIOS</h2></div>
+                <div class="sidebar-menu">
+                    <div class="menu-item active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></div>
+                    <div class="menu-item" data-section="profile"><i class="fas fa-user-circle"></i><span>My Profile</span></div>
+                    <div class="menu-item" data-section="progress"><i class="fas fa-chart-line"></i><span>My Progress</span></div>
+                    <div class="menu-item" data-section="certificates"><i class="fas fa-award"></i><span>My Certificates</span></div>
+                    <div class="menu-item" data-section="assessments"><i class="fas fa-clipboard-check"></i><span>Assessments & Scores</span></div>
+                    <div class="menu-item" data-section="resources"><i class="fas fa-file-download"></i><span>Resources</span></div>
+                    <div class="menu-item" data-section="courses"><i class="fas fa-book"></i><span>All Courses</span></div>
+                    <div class="menu-item logout-btn" data-action="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+                </div>
+            </div>
+
+            <div class="main-content" role="main">
+                <div class="header">
+                    <h1 class="page-title" id="studentPageTitle">Student Dashboard</h1>
+                    <div class="user-info" style="display:flex;align-items:center">
+                        <div class="user-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;margin-right:10px">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div><div>John Walker</div><div style="font-size:.8rem;color:var(--gray)"><span class="role-badge role-student">Student</span></div></div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Section -->
+                <div class="content-section" id="dashboardSection" style="display:block">
+                    <div class="dashboard-cards">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon user">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">5</div>
+                            <div class="card-title">Enrolled Courses</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon course">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">78%</div>
+                            <div class="card-title">Average Progress</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon content">
+                                    <i class="fas fa-award"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">3</div>
+                            <div class="card-title">Certificates Earned</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon assessment">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">85%</div>
+                            <div class="card-title">Average Quiz Score</div>
+                        </div>
+                    </div>
+
+                    <div class="content-section">
+                        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center">
+                            <h2 class="section-title">My Current Courses</h2>
+                            <div class="action-bar">
+                                <div class="search-box">
+                                    <input type="text" id="current-courses-search" placeholder="Search courses...">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <table id="current-courses-table">
+                            <thead><tr><th>Title</th><th>Instructor</th><th>Progress</th><th>Action</th></tr></thead>
+                            <tbody>
+                                <tr><td>Intro to Web Dev</td><td>Walter White</td><td>85%</td><td><button class="action-btn" onclick="alert('Continue')">Continue</button></td></tr>
+                                <tr><td>Data Science Fundamentals</td><td>Charles Xavier</td><td>42%</td><td><button class="action-btn" onclick="alert('Continue')">Continue</button></td></tr>
+                                <tr><td>Advanced JavaScript</td><td>Emily Davis</td><td>65%</td><td><button class="action-btn" onclick="alert('Continue')">Continue</button></td></tr>
+                                <tr><td>Python Programming</td><td>Michael Chen</td><td>30%</td><td><button class="action-btn" onclick="alert('Continue')">Continue</button></td></tr>
+                                <tr><td>UX/UI Design Principles</td><td>Sarah Johnson</td><td>90%</td><td><button class="action-btn" onclick="alert('Continue')">Continue</button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="content-section" style="margin-top:1rem">
+                        <div class="chart-container">
+                            <h3>Weekly Quiz Performance (Last 4 Weeks)</h3>
+                            <svg id="student-performance-chart" class="chart-svg"></svg>
+                        </div>
+                    </div>
+
+                    <div class="content-section" style="margin-top:1rem">
+                        <div class="chart-container">
+                            <h3>Course Progress Distribution</h3>
+                            <svg id="student-progress-chart" class="chart-svg"></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile -->
+                <div class="content-section" id="profileSection" style="display:none">
+                    <div class="section-header" style="display:flex;justify-content:space-between;align-items:center">
+                        <h2 class="section-title">My Profile</h2>
+                        <button class="btn" style="width:auto" onclick="alert('Edit Profile')"><i class="fas fa-edit"></i> Edit</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem">
+                        <div class="card"><p><strong>Name:</strong> John Walker</p><p><strong>Email:</strong> john.walker@example.com</p></div>
+                        <div class="card"><p><strong>Goals:</strong> Become a full-stack developer</p></div>
+                    </div>
+                </div>
+
+                <!-- Progress -->
+                <div class="content-section" id="progressSection" style="display:none">
+                    <div class="section-header"><h2 class="section-title">Progress Tracking</h2></div>
+                    <div class="action-bar"><div class="search-box"><input id="progress-search" placeholder="Search courses..."><i class="fas fa-search"></i></div></div>
+                    <table id="progress-table">
+                        <thead><tr><th>Course</th><th>Progress</th><th>Time Spent</th></tr></thead>
+                        <tbody>
+                            <tr><td>Intro to Web Dev</td><td>85%</td><td>42 hrs</td></tr>
+                            <tr><td>Data Science Fundamentals</td><td>42%</td><td>28 hrs</td></tr>
+                            <tr><td>Advanced JavaScript</td><td>65%</td><td>35 hrs</td></tr>
+                            <tr><td>Python Programming</td><td>30%</td><td>15 hrs</td></tr>
+                            <tr><td>UX/UI Design Principles</td><td>90%</td><td>50 hrs</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Certificates -->
+                <div class="content-section" id="certificatesSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">My Certificates</h2>
+                    </div>
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="certificates-search" placeholder="Search certificates...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    <table id="certificates-table">
+                        <thead>
+                            <tr>
+                                <th>Certificate ID</th>
+                                <th>Course</th>
+                                <th>Issue Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CERT001</td>
+                                <td>Advanced JavaScript</td>
+                                <td>2023-08-10</td>
+                                <td>
+                                    <i class="fas fa-download action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Downloading CERT001')"></i>
+                                    <i class="fas fa-print action-icon" style="color: var(--success);" onclick="alert('Printing CERT001')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CERT002</td>
+                                <td>Python Programming</td>
+                                <td>2023-07-22</td>
+                                <td>
+                                    <i class="fas fa-download action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Downloading CERT002')"></i>
+                                    <i class="fas fa-print action-icon" style="color: var(--success);" onclick="alert('Printing CERT002')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CERT003</td>
+                                <td>UX/UI Design Principles</td>
+                                <td>2023-06-15</td>
+                                <td>
+                                    <i class="fas fa-download action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Downloading CERT003')"></i>
+                                    <i class="fas fa-print action-icon" style="color: var(--success);" onclick="alert('Printing CERT003')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Assessments & Scores -->
+                <div class="content-section" id="assessmentsSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Assessments & Performance Reports</h2>
+                    </div>
+                    
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="assessments-search" placeholder="Search assessments...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <table id="assessments-table">
+                        <thead>
+                            <tr>
+                                <th>Quiz/Test</th>
+                                <th>Course</th>
+                                <th>Score</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>JavaScript Basics Quiz</td>
+                                <td>Introduction to Web Development</td>
+                                <td>85/100</td>
+                                <td>2023-08-12</td>
+                                <td><span class="status completed">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td>Python Fundamentals Test</td>
+                                <td>Data Science Fundamentals</td>
+                                <td>78/100</td>
+                                <td>2023-08-10</td>
+                                <td><span class="status completed">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td>UX Design Principles Quiz</td>
+                                <td>UX/UI Design Principles</td>
+                                <td>92/100</td>
+                                <td>2023-07-28</td>
+                                <td><span class="status completed">Completed</span></td>
+                            </tr>
+                            <tr>
+                                <td>React Components Midterm</td>
+                                <td>Advanced JavaScript</td>
+                                <td>74/100</td>
+                                <td>2023-07-15</td>
+                                <td><span class="status completed">Completed</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="ai-insight">
+                        <div class="ai-title">
+                            <i class="fas fa-robot"></i>
+                            <h3>AI Performance Report & Recommendation</h3>
+                        </div>
+                        <p>Based on your assessment results, we recommend focusing on <strong>JavaScript functions and scope</strong> concepts. Your performance in this area shows room for improvement.</p>
+                        <p style="margin-top: 0.5rem;">Consider reviewing the 'Advanced Functions' module and completing the practice exercises to strengthen your understanding.</p>
+                    </div>
+                </div>
+
+                <!-- Resources -->
+                <div class="content-section" id="resourcesSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Course Content & Resources</h2>
+                        <button class="btn action-btn" style="width: auto;" onclick="alert('Opening Discussion Forum')">
+                            <i class="fas fa-comments"></i> Discussions
+                        </button>
+                    </div>
+                    
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="resources-search" placeholder="Search resources/content...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+
+                    <table id="resources-table-student">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Course ID</th>
+                                <th>Date</th>
+                                <th>Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Intro to HTML - Lecture (Video)</td>
+                                <td>video</td>
+                                <td>CRS001</td>
+                                <td>2023-08-01</td>
+                                <td>
+                                    <a href="#" style="color:var(--primary); font-size:1.1rem;"><i class="fas fa-external-link-alt"></i></a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>JavaScript Closures (PDF)</td>
+                                <td>pdf</td>
+                                <td>CRS002</td>
+                                <td>2023-08-05</td>
+                                <td>
+                                    <a href="#" style="color:var(--primary); font-size:1.1rem;"><i class="fas fa-external-link-alt"></i></a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CSS Grid Layout Tutorial</td>
+                                <td>video</td>
+                                <td>CRS001</td>
+                                <td>2023-07-28</td>
+                                <td>
+                                    <a href="#" style="color:var(--primary); font-size:1.1rem;"><i class="fas fa-external-link-alt"></i></a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>React Hooks Cheatsheet</td>
+                                <td>pdf</td>
+                                <td>CRS002</td>
+                                <td>2023-07-20</td>
+                                <td>
+                                    <a href="#" style="color:var(--primary); font-size:1.1rem;"><i class="fas fa-external-link-alt"></i></a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- All Courses -->
+                <div class="content-section" id="coursesSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">All Offered Courses</h2>
+                        <button class="btn action-btn" style="width:auto;" onclick="alert('Browse Catalog')">
+                            <i class="fas fa-search"></i> Browse
+                        </button>
+                    </div>
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="offered-courses-search" placeholder="Search offered courses...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    <table id="offered-courses-table">
+                        <thead>
+                            <tr>
+                                <th>Course ID</th>
+                                <th>Title</th>
+                                <th>Instructor</th>
+                                <th>Enrolled</th>
+                                <th>Capacity</th>
+                                <th>Free Seats</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CRS001</td>
+                                <td>Introduction to Web Development</td>
+                                <td>Walter White</td>
+                                <td>142</td>
+                                <td>200</td>
+                                <td>58</td>
+                                <td>
+                                    <button class="action-btn" onclick="alert('View Course (demo)')"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn" style="margin-left:6px;" onclick="alert('Enroll (demo)')"><i class="fas fa-user-plus"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CRS002</td>
+                                <td>Advanced JavaScript</td>
+                                <td>Emily Davis</td>
+                                <td>89</td>
+                                <td>150</td>
+                                <td>61</td>
+                                <td>
+                                    <button class="action-btn" onclick="alert('View Course (demo)')"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn" style="margin-left:6px;" onclick="alert('Enroll (demo)')"><i class="fas fa-user-plus"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CRS003</td>
+                                <td>Data Science Fundamentals</td>
+                                <td>Charles Xavier</td>
+                                <td>120</td>
+                                <td>180</td>
+                                <td>60</td>
+                                <td>
+                                    <button class="action-btn" onclick="alert('View Course (demo)')"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn" style="margin-left:6px;" onclick="alert('Enroll (demo)')"><i class="fas fa-user-plus"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CRS004</td>
+                                <td>Python Programming</td>
+                                <td>Michael Chen</td>
+                                <td>95</td>
+                                <td>150</td>
+                                <td>55</td>
+                                <td>
+                                    <button class="action-btn" onclick="alert('View Course (demo)')"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn" style="margin-left:6px;" onclick="alert('Enroll (demo)')"><i class="fas fa-user-plus"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CRS005</td>
+                                <td>UX/UI Design Principles</td>
+                                <td>Sarah Johnson</td>
+                                <td>78</td>
+                                <td>120</td>
+                                <td>42</td>
+                                <td>
+                                    <button class="action-btn" onclick="alert('View Course (demo)')"><i class="fas fa-eye"></i></button>
+                                    <button class="action-btn" style="margin-left:6px;" onclick="alert('Enroll (demo)')"><i class="fas fa-user-plus"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructor Dashboard -->
+    <div class="dashboard" id="instructorDashboard" aria-hidden="true">
+        <div class="container">
+            <div class="sidebar" data-role="instructor">
+                <div class="sidebar-header"><i class="fas fa-graduation-cap fa-2x"></i><h2>HELIOS</h2></div>
+                <div class="sidebar-menu">
+                    <div class="menu-item active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></div>
+                    <div class="menu-item" data-section="courses"><i class="fas fa-book"></i><span>Course Management</span></div>
+                    <div class="menu-item" data-section="students"><i class="fas fa-users"></i><span>Student Progress</span></div>
+                    <div class="menu-item" data-section="content"><i class="fas fa-upload"></i><span>Content & Resources</span></div>
+                    <div class="menu-item" data-section="assessments"><i class="fas fa-clipboard-check"></i><span>Assessment Mgmt</span></div>
+                    <div class="menu-item logout-btn" data-action="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="header"><h1 class="page-title">Instructor Dashboard</h1>
+                    <div class="user-info" style="display:flex;align-items:center">
+                        <div class="user-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="fas fa-user"></i></div>
+                        <div><div>Walter White</div><div style="font-size:.8rem;color:var(--gray)"><span class="role-badge role-instructor">Instructor</span></div></div>
+                    </div>
+                </div>
+
+                <div class="content-section" id="dashboardSection" style="display:block">
+                    <div class="dashboard-cards">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon user">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">5</div>
+                            <div class="card-title">Courses Teaching</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon course">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">142</div>
+                            <div class="card-title">Total Enrollments</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon content">
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">4.6/5</div>
+                            <div class="card-title">Avg. Course Rating</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon assessment">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">82%</div>
+                            <div class="card-title">Avg. Student Score</div>
+                        </div>
+                    </div>
+
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Recent Course Reviews</h2>
+                            <div class="action-bar">
+                                <div class="search-box">
+                                    <input type="text" id="reviews-search" placeholder="Search reviews...">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <table id="instructor-reviews-table">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Rating</th>
+                                    <th>Comment</th>
+                                    <th>Student</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Intro to Web Dev</td>
+                                    <td><i class="fas fa-star" style="color: gold;"></i> 5.0</td>
+                                    <td style="max-width:300px;">"Excellent material and very clear instruction. Highly recommend this course!"</td>
+                                    <td>S. Chen</td>
+                                    <td>2023-11-01</td>
+                                </tr>
+                                <tr>
+                                    <td>Advanced JavaScript</td>
+                                    <td><i class="fas fa-star" style="color: gold;"></i> 4.0</td>
+                                    <td style="max-width:300px;">"Great depth, but some quizzes were too difficult. Loved the closure section."</td>
+                                    <td>M. Patel</td>
+                                    <td>2023-10-28</td>
+                                </tr>
+                                <tr>
+                                    <td>Intro to Web Dev</td>
+                                    <td><i class="fas fa-star" style="color: gold;"></i> 4.5</td>
+                                    <td style="max-width:300px;">"Well-structured course with practical examples. Would like more advanced topics."</td>
+                                    <td>J. Rodriguez</td>
+                                    <td>2023-10-25</td>
+                                </tr>
+                                <tr>
+                                    <td>Advanced JavaScript</td>
+                                    <td><i class="fas fa-star" style="color: gold;"></i> 5.0</td>
+                                    <td style="max-width:300px;">"Best JavaScript course I've taken. Instructor explains complex concepts clearly."</td>
+                                    <td>A. Williams</td>
+                                    <td>2023-10-20</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Instructor Progress Chart -->
+                    <div class="content-section" style="margin-top:1rem">
+                        <div class="chart-container">
+                            <h3>Student Progress Distribution</h3>
+                            <svg id="instructor-progress-chart" class="chart-svg"></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-section" id="coursesSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Course Management</h2>
+                        <div class="action-bar">
+                            <div class="search-box">
+                                <input type="text" id="instructor-courses-search" placeholder="Search courses...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="instructor-courses-table">
+                        <thead><tr><th>Course ID</th><th>Title</th><th>Enrolled</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>CRS001</td><td>Intro to Web Dev</td><td>142</td><td><button class="action-btn" onclick="alert('Manage Course')">Manage</button></td></tr>
+                            <tr><td>CRS002</td><td>Advanced JavaScript</td><td>89</td><td><button class="action-btn" onclick="alert('Manage Course')">Manage</button></td></tr>
+                            <tr><td>CRS006</td><td>React Fundamentals</td><td>67</td><td><button class="action-btn" onclick="alert('Manage Course')">Manage</button></td></tr>
+                            <tr><td>CRS007</td><td>Node.js Backend</td><td>54</td><td><button class="action-btn" onclick="alert('Manage Course')">Manage</button></td></tr>
+                            <tr><td>CRS008</td><td>Database Design</td><td>38</td><td><button class="action-btn" onclick="alert('Manage Course')">Manage</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="content-section" id="studentsSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Student Progress</h2>
+                        <div class="action-bar">
+                            <div class="search-box">
+                                <input type="text" id="students-search" placeholder="Search students...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="students-table">
+                        <thead><tr><th>Name</th><th>Email</th><th>Avg Progress</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>John Walker</td><td>john.walker@example.com</td><td>78%</td><td><button class="action-btn" onclick="alert('View Details')">Details</button></td></tr>
+                            <tr><td>Sarah Johnson</td><td>sarah.j@example.com</td><td>92%</td><td><button class="action-btn" onclick="alert('View Details')">Details</button></td></tr>
+                            <tr><td>Michael Chen</td><td>m.chen@example.com</td><td>65%</td><td><button class="action-btn" onclick="alert('View Details')">Details</button></td></tr>
+                            <tr><td>Emily Davis</td><td>e.davis@example.com</td><td>88%</td><td><button class="action-btn" onclick="alert('View Details')">Details</button></td></tr>
+                            <tr><td>David Wilson</td><td>d.wilson@example.com</td><td>45%</td><td><button class="action-btn" onclick="alert('View Details')">Details</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Content & Resources -->
+                <div class="content-section" id="contentSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Content & Resources Management</h2>
+                        <button class="btn action-btn" style="width: auto;" onclick="addResource()">
+                            <i class="fas fa-plus"></i> Upload New Content
+                        </button>
+                    </div>
+
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="instructor-content-search" placeholder="Search content...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="action-buttons">
+                            <select id="resources-filter" class="form-group input" style="padding: 0.5rem; width: 150px;">
+                                <option value="all">All Types</option>
+                                <option value="video">Video</option>
+                                <option value="pdf">PDF</option>
+                                <option value="presentation">Presentation</option>
+                                <option value="assignment">Assignment</option>
+                            </select>
+                            <button class="btn action-btn" style="width:auto;" onclick="alert('Opening Discussion Forum')">
+                                <i class="fas fa-comments"></i> Discussions
+                            </button>
+                        </div>
+                    </div>
+
+                    <table id="resources-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Course ID</th>
+                                <th>Link</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Intro to HTML - Lecture (Video)</td>
+                                <td>video</td>
+                                <td>CRS001</td>
+                                <td>
+                                    <a href="#" style="color:var(--primary); font-size:1.1rem;"><i class="fas fa-external-link-alt"></i></a>
+                                </td>
+                                <td>2023-08-01</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Resource')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteResource('RES001')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>JavaScript Closures (PDF)</td>
+                                <td>pdf</td>
+                                <td>CRS002</td>
+                                <td>
+                                    <a href="#" style="color:var(--primary); font-size:1.1rem;"><i class="fas fa-external-link-alt"></i></a>
+                                </td>
+                                <td>2023-08-05</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Resource')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteResource('RES002')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>React Components Presentation</td>
+                                <td>presentation</td>
+                                <td>CRS006</td>
+                                <td>
+                                    <a href="#" style="color:var(--primary); font-size:1.1rem;"><i class="fas fa-external-link-alt"></i></a>
+                                </td>
+                                <td>2023-07-28</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Resource')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteResource('RES003')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Assessment Management -->
+                <div class="content-section" id="assessmentsSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Assessment & Quiz Management</h2>
+                        <button class="btn action-btn" style="width: auto;">
+                            <i class="fas fa-plus"></i> Create Quiz
+                        </button>
+                    </div>
+                    
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="instructor-assessments-search" placeholder="Search quizzes/scores...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <table id="instructor-assessments-table">
+                        <thead>
+                            <tr>
+                                <th>Quiz/Test</th>
+                                <th>Course</th>
+                                <th>Total Questions</th>
+                                <th>Avg. Score</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>JavaScript Basics Quiz</td>
+                                <td>CRS001</td>
+                                <td>20</td>
+                                <td>85%</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Quiz Settings')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteAssessment('JS001')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>React Components Midterm</td>
+                                <td>CRS006</td>
+                                <td>25</td>
+                                <td>74%</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Quiz Settings')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteAssessment('RC001')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Node.js Fundamentals Quiz</td>
+                                <td>CRS007</td>
+                                <td>15</td>
+                                <td>68%</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Quiz Settings')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteAssessment('NJ001')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="ai-insight">
+                        <div class="ai-title">
+                            <i class="fas fa-robot"></i>
+                            <h3>AI Insight: Quiz Performance</h3>
+                        </div>
+                        <p>Question 14 (regarding asynchronous operations) in the <strong>JavaScript Basics Quiz</strong> has a 65% failure rate. Consider reviewing the corresponding content or simplifying the question.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="dashboard" id="adminDashboard" aria-hidden="true">
+        <div class="container">
+            <div class="sidebar" data-role="admin">
+                <div class="sidebar-header"><i class="fas fa-graduation-cap fa-2x"></i><h2>HELIOS</h2></div>
+                <div class="sidebar-menu">
+                    <div class="menu-item active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></div>
+                    <div class="menu-item" data-section="users"><i class="fas fa-users"></i><span>User & Profile Mgmt</span></div>
+                    <div class="menu-item" data-section="courses"><i class="fas fa-book"></i><span>Course Management</span></div>
+                    <div class="menu-item" data-section="enrollment"><i class="fas fa-user-check"></i><span>Enrollment & Certificates</span></div>
+                    <div class="menu-item" data-section="reports"><i class="fas fa-chart-bar"></i><span>Analytics & Reports</span></div>
+                    <div class="menu-item" data-section="logs"><i class="fas fa-list-alt"></i><span>Activity Logs</span></div>
+                    <div class="menu-item" data-section="settings"><i class="fas fa-cog"></i><span>System Settings</span></div>
+                    <div class="menu-item logout-btn" data-action="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="header"><h1 class="page-title">Admin Dashboard</h1>
+                    <div class="user-info" style="display:flex;align-items:center">
+                        <div class="user-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;margin-right:10px"><i class="fas fa-user"></i></div>
+                        <div><div>Charles Xavier</div><div style="font-size:.8rem;color:var(--gray)"><span class="role-badge role-admin">Administrator</span></div></div>
+                    </div>
+                </div>
+
+                <div class="content-section" id="dashboardSection" style="display:block">
+                    <div class="dashboard-cards">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon user">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">1,254</div>
+                            <div class="card-title">Total Users</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon course">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">86</div>
+                            <div class="card-title">Active Courses</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon content">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">76%</div>
+                            <div class="card-title">Avg. Completion</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon assessment">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">1,421</div>
+                            <div class="card-title">Total Enrollments</div>
+                        </div>
+                    </div>
+
+                    <!-- Admin User Chart -->
+                    <div class="content-section" style="margin-top:1rem">
+                        <div class="chart-container">
+                            <h3>Platform User Role Breakdown</h3>
+                            <svg id="admin-user-chart" class="chart-svg"></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-section" id="usersSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">User Management</h2>
+                        <div class="action-bar">
+                            <div class="search-box">
+                                <input type="text" id="users-search" placeholder="Search users...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="users-table">
+                        <thead><tr><th>User ID</th><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>USR001</td><td>John Walker</td><td>john.walker@example.com</td><td>Student</td><td><button class="action-btn delete" onclick="deleteUser('USR001')">Delete</button></td></tr>
+                            <tr><td>USR002</td><td>Walter White</td><td>walter.white@example.com</td><td>Instructor</td><td><button class="action-btn delete" onclick="deleteUser('USR002')">Delete</button></td></tr>
+                            <tr><td>USR003</td><td>Charles Xavier</td><td>charles.xavier@example.com</td><td>Admin</td><td><button class="action-btn delete" onclick="deleteUser('USR003')">Delete</button></td></tr>
+                            <tr><td>USR004</td><td>Diddy Combs</td><td>diddy.combs@example.com</td><td>IT Officer</td><td><button class="action-btn delete" onclick="deleteUser('USR004')">Delete</button></td></tr>
+                            <tr><td>USR005</td><td>Kevin Hart</td><td>kevin.hart@example.com</td><td>Finance Officer</td><td><button class="action-btn delete" onclick="deleteUser('USR005')">Delete</button></td></tr>
+                            <tr><td>USR006</td><td>Emily Davis</td><td>emily.davis@example.com</td><td>Instructor</td><td><button class="action-btn delete" onclick="deleteUser('USR006')">Delete</button></td></tr>
+                            <tr><td>USR007</td><td>Michael Chen</td><td>michael.chen@example.com</td><td>Instructor</td><td><button class="action-btn delete" onclick="deleteUser('USR007')">Delete</button></td></tr>
+                            <tr><td>USR008</td><td>Sarah Johnson</td><td>sarah.johnson@example.com</td><td>Instructor</td><td><button class="action-btn delete" onclick="deleteUser('USR008')">Delete</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Course Management -->
+                <div class="content-section" id="coursesSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Course & Instructor Management</h2>
+                        <button class="btn action-btn" style="width: auto;">
+                            <i class="fas fa-plus"></i> Create Course
+                        </button>
+                    </div>
+                    
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="admin-courses-search" placeholder="Search courses...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-bottom:0.5rem; color:var(--dark);">All Courses</h3>
+                    <table id="admin-courses-table">
+                        <thead>
+                            <tr>
+                                <th>Course ID</th>
+                                <th>Title</th>
+                                <th>Instructor</th>
+                                <th>Enrolled</th>
+                                <th>Rating</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CRS001</td>
+                                <td>Introduction to Web Development</td>
+                                <td>Walter White</td>
+                                <td>142</td>
+                                <td>4.6</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Course CRS001')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteCourse('CRS001')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CRS002</td>
+                                <td>Advanced JavaScript</td>
+                                <td>Emily Davis</td>
+                                <td>89</td>
+                                <td>4.4</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Course CRS002')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteCourse('CRS002')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CRS003</td>
+                                <td>Data Science Fundamentals</td>
+                                <td>Charles Xavier</td>
+                                <td>120</td>
+                                <td>4.2</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Course CRS003')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteCourse('CRS003')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CRS004</td>
+                                <td>Python Programming</td>
+                                <td>Michael Chen</td>
+                                <td>95</td>
+                                <td>4.5</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Course CRS004')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteCourse('CRS004')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CRS005</td>
+                                <td>UX/UI Design Principles</td>
+                                <td>Sarah Johnson</td>
+                                <td>78</td>
+                                <td>4.7</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Course CRS005')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteCourse('CRS005')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 style="margin-top:1.5rem; margin-bottom:0.5rem; color:var(--dark);">Instructor Details</h3>
+                    <table id="admin-instructors-table">
+                        <thead>
+                            <tr>
+                                <th>Instructor</th>
+                                <th>Email</th>
+                                <th>Expertise</th>
+                                <th>Courses Taught</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Walter White</td>
+                                <td>walter.white@example.com</td>
+                                <td>Web Dev, UX</td>
+                                <td>3</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Instructor Profile')"></i>
+                                    <i class="fas fa-id-card action-icon" style="color: var(--success);" onclick="alert('View Instructor Credentials')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Emily Davis</td>
+                                <td>emily.davis@example.com</td>
+                                <td>JavaScript, React</td>
+                                <td>2</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Instructor Profile')"></i>
+                                    <i class="fas fa-id-card action-icon" style="color: var(--success);" onclick="alert('View Instructor Credentials')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Michael Chen</td>
+                                <td>michael.chen@example.com</td>
+                                <td>Python, Data Science</td>
+                                <td>2</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Instructor Profile')"></i>
+                                    <i class="fas fa-id-card action-icon" style="color: var(--success);" onclick="alert('View Instructor Credentials')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Sarah Johnson</td>
+                                <td>sarah.johnson@example.com</td>
+                                <td>UX/UI Design</td>
+                                <td>1</td>
+                                <td>
+                                    <i class="fas fa-edit action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Editing Instructor Profile')"></i>
+                                    <i class="fas fa-id-card action-icon" style="color: var(--success);" onclick="alert('View Instructor Credentials')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Enrollment & Certificates -->
+                <div class="content-section" id="enrollmentSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Enrollment & Certificate Control</h2>
+                        <button class="btn action-btn" style="width: auto;">
+                            <i class="fas fa-plus"></i> Manual Enrollment
+                        </button>
+                    </div>
+                    
+                    <h3 style="margin-bottom:0.5rem; color:var(--dark);">Recent Enrollments</h3>
+                    <table id="admin-enrollments-table">
+                        <thead>
+                            <tr>
+                                <th>Enrollment ID</th>
+                                <th>Student</th>
+                                <th>Course</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>ENR005</td>
+                                <td>John Walker</td>
+                                <td>Data Science Fundamentals</td>
+                                <td>2023-09-01</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <i class="fas fa-times action-icon" style="color: var(--warning);" onclick="deleteEnrollment('ENR005')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>ENR006</td>
+                                <td>Sarah Johnson</td>
+                                <td>UX/UI Design Principles</td>
+                                <td>2023-08-28</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <i class="fas fa-times action-icon" style="color: var(--warning);" onclick="deleteEnrollment('ENR006')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>ENR007</td>
+                                <td>Michael Chen</td>
+                                <td>Python Programming</td>
+                                <td>2023-08-25</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <i class="fas fa-times action-icon" style="color: var(--warning);" onclick="deleteEnrollment('ENR007')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>ENR008</td>
+                                <td>Emily Davis</td>
+                                <td>Advanced JavaScript</td>
+                                <td>2023-08-20</td>
+                                <td><span class="status active">Active</span></td>
+                                <td>
+                                    <i class="fas fa-times action-icon" style="color: var(--warning);" onclick="deleteEnrollment('ENR008')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 style="margin-top:1.5rem; margin-bottom:0.5rem; color:var(--dark);">Issued Certificates</h3>
+                    <table id="admin-certificates-table">
+                        <thead>
+                            <tr>
+                                <th>Certificate ID</th>
+                                <th>Student</th>
+                                <th>Course</th>
+                                <th>Issue Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>CERT001</td>
+                                <td>John Walker</td>
+                                <td>Advanced JavaScript</td>
+                                <td>2023-08-10</td>
+                                <td>
+                                    <i class="fas fa-download action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Downloading Certificate')"></i>
+                                    <i class="fas fa-redo-alt action-icon" style="color: var(--warning);" onclick="alert('Re-issuing Certificate')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CERT002</td>
+                                <td>Sarah Johnson</td>
+                                <td>Python Programming</td>
+                                <td>2023-07-22</td>
+                                <td>
+                                    <i class="fas fa-download action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Downloading Certificate')"></i>
+                                    <i class="fas fa-redo-alt action-icon" style="color: var(--warning);" onclick="alert('Re-issuing Certificate')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>CERT003</td>
+                                <td>Michael Chen</td>
+                                <td>UX/UI Design Principles</td>
+                                <td>2023-06-15</td>
+                                <td>
+                                    <i class="fas fa-download action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Downloading Certificate')"></i>
+                                    <i class="fas fa-redo-alt action-icon" style="color: var(--warning);" onclick="alert('Re-issuing Certificate')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Analytics & Reports -->
+                <div class="content-section" id="reportsSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Analytics & Reports</h2>
+                        <button class="btn action-btn" style="width: auto;">
+                            <i class="fas fa-download"></i> Export Report
+                        </button>
+                    </div>
+                    
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="reports-search" placeholder="Search reports...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <table id="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Report ID</th>
+                                <th>Title</th>
+                                <th>Generated By</th>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>RPT001</td>
+                                <td>Course Popularity Analysis</td>
+                                <td>AI System</td>
+                                <td>2023-08-15</td>
+                                <td>Analytics</td>
+                                <td>
+                                    <i class="fas fa-download action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Downloading RPT001')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteReport('RPT001')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RPT002</td>
+                                <td>Student Engagement Metrics</td>
+                                <td>AI System</td>
+                                <td>2023-08-10</td>
+                                <td>Analytics</td>
+                                <td>
+                                    <i class="fas fa-download action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Downloading RPT002')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteReport('RPT002')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>RPT003</td>
+                                <td>Instructor Performance Review</td>
+                                <td>Admin</td>
+                                <td>2023-08-05</td>
+                                <td>Performance</td>
+                                <td>
+                                    <i class="fas fa-download action-icon" style="color: var(--primary); margin-right: 15px;" onclick="alert('Downloading RPT003')"></i>
+                                    <i class="fas fa-trash action-icon" style="color: var(--warning);" onclick="deleteReport('RPT003')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="ai-insight">
+                        <div class="ai-title">
+                            <i class="fas fa-robot"></i>
+                            <h3>AI System Report Summary</h3>
+                        </div>
+                        <p>Based on usage patterns, the system is experiencing peak load between 10AM-12PM. Consider scaling resources during these hours.</p>
+                        <p style="margin-top: 0.5rem;">AI analysis suggests that adding more interactive content could increase student engagement by approximately 23%.</p>
+                    </div>
+                </div>
+
+                <!-- Activity Logs -->
+                <div class="content-section" id="logsSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">User Activity Logs</h2>
+                        <button class="btn action-btn" style="width: auto;">
+                            <i class="fas fa-download"></i> Export Logs
+                        </button>
+                    </div>
+                    
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="activity-search-admin" placeholder="Search logs...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <table id="activity-table-admin">
+                        <thead>
+                            <tr>
+                                <th>Log ID</th>
+                                <th>User</th>
+                                <th>Activity</th>
+                                <th>Timestamp</th>
+                                <th>IP Address</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>LOG001</td>
+                                <td>John Walker</td>
+                                <td>Logged in</td>
+                                <td>2023-08-15 09:23:45</td>
+                                <td>192.168.1.101</td>
+                                <td><span class="status active">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td>LOG004</td>
+                                <td>Admin (C. Xavier)</td>
+                                <td>Deleted course CRS005</td>
+                                <td>2023-08-15 12:45:01</td>
+                                <td>192.168.1.100</td>
+                                <td><span class="status danger">High Risk</span></td>
+                            </tr>
+                            <tr>
+                                <td>LOG005</td>
+                                <td>Walter White</td>
+                                <td>Uploaded new content</td>
+                                <td>2023-08-15 11:30:15</td>
+                                <td>192.168.1.102</td>
+                                <td><span class="status active">Success</span></td>
+                            </tr>
+                            <tr>
+                                <td>LOG006</td>
+                                <td>Emily Davis</td>
+                                <td>Created new quiz</td>
+                                <td>2023-08-14 16:20:30</td>
+                                <td>192.168.1.103</td>
+                                <td><span class="status active">Success</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- System Settings -->
+                <div class="content-section" id="settingsSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">System Settings</h2>
+                        <button class="btn action-btn" style="width: auto;">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                        <div>
+                            <h3 style="margin-bottom: 1rem; color:var(--dark);">Core Settings (Roles, Permissions)</h3>
+                            <div class="form-group">
+                                <label for="siteName">Site Name</label>
+                                <input type="text" id="siteName" value="HELIOS LMS">
+                            </div>
+                            <div class="form-group">
+                                <label for="userRegistration">User Registration</label>
+                                <select id="userRegistration" class="form-group input">
+                                    <option>Enabled</option>
+                                    <option>Disabled</option>
+                                    <option>Admin Approval Required</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="defaultRole">Default User Role</label>
+                                <select id="defaultRole" class="form-group input">
+                                    <option>Student</option>
+                                    <option>Instructor</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 style="margin-bottom: 1rem; color:var(--dark);">Access & Security</h3>
+                            <div class="form-group">
+                                <label for="minPasswordLength">Min Password Length</label>
+                                <input type="number" id="minPasswordLength" value="8">
+                            </div>
+                            <div class="form-group">
+                                <label for="aiAnalytics">AI Analytics Module</label>
+                                <select id="aiAnalytics" class="form-group input">
+                                    <option>Enabled</option>
+                                    <option>Disabled</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="performanceAlerts">Performance Alerts</label>
+                                <select id="performanceAlerts" class="form-group input">
+                                    <option>Enabled</option>
+                                    <option>Disabled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IT Officer Dashboard -->
+    <div class="dashboard" id="itDashboard" aria-hidden="true">
+        <div class="container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header"><i class="fas fa-graduation-cap fa-2x"></i><h2>HELIOS</h2></div>
+                <div class="sidebar-menu">
+                    <div class="menu-item active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></div>
+                    <div class="menu-item" data-section="logs"><i class="fas fa-list-alt"></i><span>Activity Logs</span></div>
+                    <div class="menu-item" data-section="system"><i class="fas fa-server"></i><span>System Health</span></div>
+                    <div class="menu-item" data-section="security"><i class="fas fa-shield-alt"></i><span>Security</span></div>
+                    <div class="menu-item logout-btn" data-action="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="header">
+                    <h1 class="page-title" id="itPageTitle">IT Officer Dashboard</h1>
+                    <div class="user-info">
+                        <div class="user-avatar"><i class="fas fa-user"></i></div>
+                        <div>
+                            <div>Diddy Combs</div>
+                            <div style="font-size: 0.8rem; color: var(--gray);"><span class="role-badge role-it">IT Officer</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-section" id="dashboardSection" style="display:block">
+                    <div class="dashboard-cards">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon user">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">98%</div>
+                            <div class="card-title">System Uptime</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon course">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">2.4GB</div>
+                            <div class="card-title">Database Size</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon content">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">542</div>
+                            <div class="card-title">Active Sessions</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon assessment">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">3</div>
+                            <div class="card-title">Active Issues</div>
+                        </div>
+                    </div>
+
+                    <!-- IT Health Chart -->
+                    <div class="content-section">
+                        <div class="chart-container">
+                            <h3>Server Latency & Load (Last 24 Hours)</h3>
+                            <svg id="it-health-chart" class="chart-svg"></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-section" id="logsSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">System Activity Logs</h2>
+                        <div class="action-bar">
+                            <div class="search-box">
+                                <input type="text" id="it-logs-search" placeholder="Search logs...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="it-logs-table">
+                        <thead><tr><th>Log ID</th><th>User</th><th>Activity</th><th>Timestamp</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>LOG001</td><td>John Walker</td><td>Logged in</td><td>2023-08-15 09:23:45</td><td><button class="action-btn delete" onclick="deleteLog('LOG001')">Delete</button></td></tr>
+                            <tr><td>LOG002</td><td>Walter White</td><td>Uploaded content</td><td>2023-08-15 10:15:30</td><td><button class="action-btn delete" onclick="deleteLog('LOG002')">Delete</button></td></tr>
+                            <tr><td>LOG003</td><td>Emily Davis</td><td>Created quiz</td><td>2023-08-14 16:20:30</td><td><button class="action-btn delete" onclick="deleteLog('LOG003')">Delete</button></td></tr>
+                            <tr><td>LOG004</td><td>Admin (C. Xavier)</td><td>Deleted course</td><td>2023-08-15 12:45:01</td><td><button class="action-btn delete" onclick="deleteLog('LOG004')">Delete</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- System Health -->
+                <div class="content-section" id="systemSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">System Health Monitoring</h2>
+                    </div>
+                    
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="system-search" placeholder="Search system metrics...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <table id="system-table">
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Status</th>
+                                <th>CPU Usage</th>
+                                <th>Memory Usage</th>
+                                <th>Response Time</th>
+                                <th>Last Check</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Web Server</td>
+                                <td><span class="status active">Healthy</span></td>
+                                <td><div class="progress-bar"><div class="progress" style="width: 45%"></div></div> <span>45%</span></td>
+                                <td><div class="progress-bar"><div class="progress" style="width: 62%"></div></div> <span>62%</span></td>
+                                <td>120ms</td>
+                                <td>2023-08-15 11:45:00</td>
+                            </tr>
+                            <tr>
+                                <td>Database Server</td>
+                                <td><span class="status active">Healthy</span></td>
+                                <td><div class="progress-bar"><div class="progress" style="width: 38%"></div></div> <span>38%</span></td>
+                                <td><div class="progress-bar"><div class="progress" style="width: 75%"></div></div> <span>75%</span></td>
+                                <td>85ms</td>
+                                <td>2023-08-15 11:45:00</td>
+                            </tr>
+                            <tr>
+                                <td>File Storage</td>
+                                <td><span class="status warning">Warning</span></td>
+                                <td><div class="progress-bar"><div class="progress" style="width: 15%"></div></div> <span>15%</span></td>
+                                <td><div class="progress-bar"><div class="progress" style="width: 88%"></div></div> <span>88%</span></td>
+                                <td>210ms</td>
+                                <td>2023-08-15 11:45:00</td>
+                            </tr>
+                            <tr>
+                                <td>Cache Server</td>
+                                <td><span class="status active">Healthy</span></td>
+                                <td><div class="progress-bar"><div class="progress" style="width: 22%"></div></div> <span>22%</span></td>
+                                <td><div class="progress-bar"><div class="progress" style="width: 45%"></div></div> <span>45%</span></td>
+                                <td>12ms</td>
+                                <td>2023-08-15 11:45:00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Security -->
+                <div class="content-section" id="securitySection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Security Monitoring</h2>
+                    </div>
+                    
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <input type="text" id="security-search" placeholder="Search security events...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                    
+                    <table id="security-table">
+                        <thead>
+                            <tr>
+                                <th>Event ID</th>
+                                <th>Type</th>
+                                <th>Severity</th>
+                                <th>Description</th>
+                                <th>Timestamp</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>SEC001</td>
+                                <td>Failed Login</td>
+                                <td><span class="status warning">Medium</span></td>
+                                <td>Multiple failed login attempts from IP 192.168.1.105</td>
+                                <td>2023-08-15 10:23:12</td>
+                                <td><span class="status active">Investigated</span></td>
+                                <td><button class="action-btn delete" onclick="deleteSecurityEvent('SEC001')">Resolve</button></td>
+                            </tr>
+                            <tr>
+                                <td>SEC002</td>
+                                <td>Unauthorized Access</td>
+                                <td><span class="status danger">High</span></td>
+                                <td>Attempt to access admin panel from user role 'student'</td>
+                                <td>2023-08-14 14:45:33</td>
+                                <td><span class="status pending">Pending</span></td>
+                                <td><button class="action-btn delete" onclick="deleteSecurityEvent('SEC002')">Resolve</button></td>
+                            </tr>
+                            <tr>
+                                <td>SEC003</td>
+                                <td>SQL Injection Attempt</td>
+                                <td><span class="status danger">High</span></td>
+                                <td>Detected SQL injection pattern in search query</td>
+                                <td>2023-08-13 09:12:45</td>
+                                <td><span class="status active">Blocked</span></td>
+                                <td><button class="action-btn delete" onclick="deleteSecurityEvent('SEC003')">Resolve</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Finance Officer Dashboard -->
+    <div class="dashboard" id="financeDashboard" aria-hidden="true">
+        <div class="container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header"><i class="fas fa-graduation-cap fa-2x"></i><h2>HELIOS</h2></div>
+                <div class="sidebar-menu">
+                    <div class="menu-item active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></div>
+                    <div class="menu-item" data-section="reports"><i class="fas fa-chart-bar"></i><span>Financial Reports</span></div>
+                    <div class="menu-item" data-section="enrollment"><i class="fas fa-dollar-sign"></i><span>Billing & Enrollment</span></div>
+                    <div class="menu-item" data-section="settings"><i class="fas fa-cog"></i><span>Financial Settings</span></div>
+                    <div class="menu-item logout-btn" data-action="logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="header">
+                    <h1 class="page-title" id="financePageTitle">Finance Officer Dashboard</h1>
+                    <div class="user-info"><div class="user-avatar"><i class="fas fa-user"></i></div><div><div>Kevin Hart</div><div style="font-size:0.8rem;color:var(--gray)"><span class="role-badge role-finance">Finance Officer</span></div></div></div>
+                </div>
+
+                <div class="content-section" id="dashboardSection" style="display:block">
+                    <div class="dashboard-cards">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon user">
+                                    <i class="fas fa-hand-holding-usd"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">$45,200</div>
+                            <div class="card-title">Monthly Revenue</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon course">
+                                    <i class="fas fa-ticket-alt"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">124</div>
+                            <div class="card-title">New Paid Enrollments</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon content">
+                                    <i class="fas fa-user-tag"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">12</div>
+                            <div class="card-title">Pending Refunds</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon assessment">
+                                    <i class="fas fa-times"></i>
+                                </div>
+                                <i class="fas fa-ellipsis-h" style="color: var(--gray);"></i>
+                            </div>
+                            <div class="card-value">4%</div>
+                            <div class="card-title">Churn Rate</div>
+                        </div>
+                    </div>
+
+                    <!-- Finance Revenue Chart -->
+                    <div class="content-section">
+                        <div class="chart-container">
+                            <h3>Monthly Revenue Trend (Last 6 Months)</h3>
+                            <svg id="finance-revenue-chart" class="chart-svg"></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-section" id="reportsSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Financial Reports</h2>
+                        <div class="action-bar">
+                            <div class="search-box">
+                                <input type="text" id="finance-reports-search" placeholder="Search reports...">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <table id="finance-reports-table">
+                        <thead><tr><th>Report</th><th>Date</th><th>Type</th><th>Actions</th></tr></thead>
+                        <tbody>
+                            <tr><td>Monthly Income</td><td>2023-08-01</td><td>Summary</td><td><button class="action-btn delete" onclick="deleteFinanceReport('RPT001')">Delete</button></td></tr>
+                            <tr><td>Quarterly Expenses</td><td>2023-07-15</td><td>Expense</td><td><button class="action-btn delete" onclick="deleteFinanceReport('RPT002')">Delete</button></td></tr>
+                            <tr><td>Annual Revenue Forecast</td><td>2023-06-30</td><td>Forecast</td><td><button class="action-btn delete" onclick="deleteFinanceReport('RPT003')">Delete</button></td></tr>
+                            <tr><td>Tax Compliance Report</td><td>2023-05-20</td><td>Compliance</td><td><button class="action-btn delete" onclick="deleteFinanceReport('RPT004')">Delete</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Billing & Enrollment -->
+                <div class="content-section" id="enrollmentSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Billing & Enrollment Audit</h2>
+                        <button class="btn action-btn" style="width: auto;">
+                            <i class="fas fa-search-dollar"></i> Audit Enrollment
+                        </button>
+                    </div>
+                    
+                    <h3 style="margin-bottom:0.5rem; color:var(--dark);">Recent Paid Enrollments</h3>
+                    <table id="finance-enrollments-table">
+                        <thead>
+                            <tr>
+                                <th>Enrollment ID</th>
+                                <th>Student</th>
+                                <th>Course</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>ENR005</td>
+                                <td>John Walker</td>
+                                <td>Data Science Fundamentals</td>
+                                <td>$199.99</td>
+                                <td><span class="status active">Paid</span></td>
+                                <td>
+                                    <i class="fas fa-receipt action-icon" style="color: var(--primary);" onclick="alert('Viewing Receipt')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>ENR006</td>
+                                <td>Sarah Johnson</td>
+                                <td>UX/UI Design Principles</td>
+                                <td>$149.99</td>
+                                <td><span class="status active">Paid</span></td>
+                                <td>
+                                    <i class="fas fa-receipt action-icon" style="color: var(--primary);" onclick="alert('Viewing Receipt')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>ENR007</td>
+                                <td>Michael Chen</td>
+                                <td>Python Programming</td>
+                                <td>$179.99</td>
+                                <td><span class="status active">Paid</span></td>
+                                <td>
+                                    <i class="fas fa-receipt action-icon" style="color: var(--primary);" onclick="alert('Viewing Receipt')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3 style="margin-top:1.5rem; margin-bottom:0.5rem; color:var(--dark);">Refunds and Disputes</h3>
+                    <table id="finance-refunds-table">
+                        <thead>
+                            <tr>
+                                <th>Transaction ID</th>
+                                <th>Student</th>
+                                <th>Amount</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>TRN0123</td>
+                                <td>Jane Doe</td>
+                                <td>$99.99</td>
+                                <td>Course content mismatch</td>
+                                <td><span class="status pending">Pending</span></td>
+                                <td>
+                                    <i class="fas fa-check action-icon" style="color: var(--success);" onclick="alert('Approving Refund')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>TRN0124</td>
+                                <td>Robert Brown</td>
+                                <td>$149.99</td>
+                                <td>Technical issues</td>
+                                <td><span class="status pending">Pending</span></td>
+                                <td>
+                                    <i class="fas fa-check action-icon" style="color: var(--success);" onclick="alert('Approving Refund')"></i>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>TRN0125</td>
+                                <td>Lisa Taylor</td>
+                                <td>$79.99</td>
+                                <td>Personal reasons</td>
+                                <td><span class="status completed">Approved</span></td>
+                                <td>
+                                    <i class="fas fa-check action-icon" style="color: var(--success);" onclick="alert('Refund already approved')"></i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Financial Settings -->
+                <div class="content-section" id="settingsSection" style="display:none">
+                    <div class="section-header">
+                        <h2 class="section-title">Financial System Settings</h2>
+                        <button class="btn action-btn" style="width: auto;">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                        <div>
+                            <h3 style="margin-bottom: 1rem; color:var(--dark);">Pricing & Tax</h3>
+                            <div class="form-group">
+                                <label for="currency">Default Currency</label>
+                                <input type="text" id="currency" value="USD">
+                            </div>
+                            <div class="form-group">
+                                <label for="taxRate">Sales Tax Rate (%)</label>
+                                <input type="number" id="taxRate" value="5.5">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h3 style="margin-bottom: 1rem; color:var(--dark);">Payment Gateways</h3>
+                            <div class="form-group">
+                                <label for="gateway1">Stripe Status</label>
+                                <select id="gateway1" class="form-group input">
+                                    <option>Active</option>
+                                    <option>Disabled</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="refundPolicy">Refund Policy Days</label>
+                                <input type="number" id="refundPolicy" value="30">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA STORES (Simulated Database) ---
+        const usersStore = [
+            { id: 'USR001', name: 'John Walker', email: 'john.walker@example.com', password: 'pass123', role: 'student', goals: 'Become a full-stack developer focusing on JavaScript and cloud technologies.', interests: 'Web Development, JavaScript, React, System Architecture, Reading.', achievements: 'Completed 3 certifications, Top 5% in Advanced JavaScript course.' },
+            { id: 'USR002', name: 'Walter White', email: 'walter.white@example.com', password: 'teach123', role: 'instructor', goals: 'Improve course content and student engagement.', interests: 'Teaching, UX/UI Design, Educational Technology.', achievements: 'Won teaching award, published 5 courses.' },
+            { id: 'USR003', name: 'Charles Xavier', email: 'charles.xavier@example.com', password: 'adminpass', role: 'admin', goals: 'Maintain platform stability and drive strategic growth.', interests: 'Ops, Analytics, Financial Planning.', achievements: 'Reduced server costs by 20%, launched new reporting tool.' },
+            { id: 'USR004', name: 'Diddy Combs', email: 'diddy.combs@example.com', password: 'itpass', role: 'it', goals: 'Ensure 99.9% uptime and enhance security protocols.', interests: 'Network Security, Cloud Architecture, Hardware.', achievements: 'Migrated database without downtime, closed 10 critical security tickets.' },
+            { id: 'USR005', name: 'Kevin Hart', email: 'kevin.hart@example.com', password: 'financepass', role: 'finance', goals: 'Optimize course profitability and manage budgets.', interests: 'Accounting, Financial Auditing, Economic Trends.', achievements: 'Implemented new pricing model, oversaw successful annual audit.' }
+        ];
+
+        let currentUser = null;
+
+        /**********************
+         * Helper & Navigation
+         **********************/
+        const dashboards = {
+            student: document.getElementById('studentDashboard'),
+            instructor: document.getElementById('instructorDashboard'),
+            admin: document.getElementById('adminDashboard'),
+            it: document.getElementById('itDashboard'),
+            finance: document.getElementById('financeDashboard')
+        };
+
+        function hideAllDashboards(){
+            Object.values(dashboards).forEach(d => {
+                if(d) { d.style.display = 'none'; d.setAttribute('aria-hidden','true') }
+            });
+        }
+
+        function showDashboard(role){
+            hideAllDashboards();
+            const el = dashboards[role];
+            if(!el) return;
+            el.style.display = 'block';
+            el.setAttribute('aria-hidden','false');
+
+            // Set first menu-item active & show its section, hide others
+            const menuItems = el.querySelectorAll('.menu-item');
+            menuItems.forEach(mi => mi.classList.remove('active'));
+            if(menuItems[0]) menuItems[0].classList.add('active');
+
+            // Hide sections inside the dashboard, then show the first section
+            const contentSections = el.querySelectorAll('.content-section[id]');
+            contentSections.forEach(s => { s.style.display = 'none' });
+
+            const firstSection = el.querySelector('.menu-item.active')?.dataset.section;
+            if(firstSection) {
+                const target = el.querySelector('#' + firstSection + 'Section');
+                if(target) { target.style.display = 'block' }
+            }
+
+            // Render role-specific charts
+            if(role === 'student') {
+                renderStudentCharts();
+            } else if(role === 'instructor') {
+                renderInstructorCharts();
+            } else if(role === 'admin') {
+                renderAdminCharts();
+            } else if(role === 'it') {
+                renderItCharts();
+            } else if(role === 'finance') {
+                renderFinanceCharts();
+            }
+
+            // Attach menu click handlers (idempotent - safe to call)
+            attachSidebarHandlers(el, role);
+            
+            // Initialize search functionality for all tables
+            initializeSearchFunctionality();
+        }
+
+        function attachSidebarHandlers(sidebarRoot, role){
+            const items = sidebarRoot.querySelectorAll('.menu-item');
+            items.forEach(item => {
+                // Avoid attaching duplicate listeners
+                if(item._hasNavListener) return;
+                item._hasNavListener = true;
+                item.addEventListener('click', () => {
+                    // handle logout
+                    if(item.dataset.action === 'logout'){
+                        doLogout();
+                        return;
+                    }
+                    // toggle active class
+                    items.forEach(i=>i.classList.remove('active'));
+                    item.classList.add('active');
+
+                    // hide all content sections within this dashboard and show only selected
+                    const dashboardEl = sidebarRoot.closest('.dashboard');
+                    if(!dashboardEl) return;
+                    const sections = dashboardEl.querySelectorAll('.content-section[id]');
+                    sections.forEach(s => s.style.display = 'none');
+
+                    const targetId = item.dataset.section + 'Section';
+                    const target = dashboardEl.querySelector('#' + targetId);
+                    if(target) {
+                        target.style.display = 'block';
+                    }
+
+                    // Re-render charts when their sections are opened
+                    if(role === 'student' && targetId === 'dashboardSection') renderStudentCharts();
+                    if(role === 'instructor' && targetId === 'dashboardSection') renderInstructorCharts();
+                    if(role === 'admin' && targetId === 'dashboardSection') renderAdminCharts();
+                    if(role === 'it' && targetId === 'dashboardSection') renderItCharts();
+                    if(role === 'finance' && targetId === 'dashboardSection') renderFinanceCharts();
+                });
+            });
+        }
+
+        function doLogout(){
+            // hide dashboards and show login
+            hideAllDashboards();
+            document.getElementById('loginPage').style.display = 'flex';
+            // Optionally reset some UI state
+        }
+
+        /**********************
+         * Login handling
+         **********************/
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            const role = document.getElementById('role').value || 'student'; // default demo: student
+            // Hide login
+            document.getElementById('loginPage').style.display = 'none';
+            // Show the requested dashboard
+            showDashboard(role);
+        });
+
+        /**********************
+         * Search Functionality
+         **********************/
+        function initializeSearchFunctionality() {
+            // Get all search inputs
+            const searchInputs = document.querySelectorAll('.search-box input');
+            
+            searchInputs.forEach(input => {
+                // Remove any existing event listeners to prevent duplicates
+                const newInput = input.cloneNode(true);
+                input.parentNode.replaceChild(newInput, input);
+                
+                // Add input event listener for real-time search
+                newInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const tableId = this.id.replace('-search', '-table');
+                    const table = document.getElementById(tableId);
+                    
+                    if (table) {
+                        filterTable(table, searchTerm);
+                    }
+                });
+            });
+        }
+
+        function filterTable(table, searchTerm) {
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                let found = false;
+                const cells = row.querySelectorAll('td');
+                
+                cells.forEach(cell => {
+                    if (cell.textContent.toLowerCase().includes(searchTerm)) {
+                        found = true;
+                    }
+                });
+                
+                if (found) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        /**********************
+         * Delete Functionality
+         **********************/
+        function deleteUser(userId) {
+            if (confirm(`Are you sure you want to delete user ${userId}?`)) {
+                alert(`User ${userId} deleted successfully (demo)`);
+                // In a real application, you would remove the row from the table here
+            }
+        }
+
+        function deleteCourse(courseId) {
+            if (confirm(`Are you sure you want to delete course ${courseId}?`)) {
+                alert(`Course ${courseId} deleted successfully (demo)`);
+            }
+        }
+
+        function deleteEnrollment(enrollmentId) {
+            if (confirm(`Are you sure you want to delete enrollment ${enrollmentId}?`)) {
+                alert(`Enrollment ${enrollmentId} deleted successfully (demo)`);
+            }
+        }
+
+        function deleteReport(reportId) {
+            if (confirm(`Are you sure you want to delete report ${reportId}?`)) {
+                alert(`Report ${reportId} deleted successfully (demo)`);
+            }
+        }
+
+        function deleteLog(logId) {
+            if (confirm(`Are you sure you want to delete log ${logId}?`)) {
+                alert(`Log ${logId} deleted successfully (demo)`);
+            }
+        }
+
+        function deleteSecurityEvent(eventId) {
+            if (confirm(`Are you sure you want to resolve security event ${eventId}?`)) {
+                alert(`Security event ${eventId} resolved successfully (demo)`);
+            }
+        }
+
+        function deleteFinanceReport(reportId) {
+            if (confirm(`Are you sure you want to delete financial report ${reportId}?`)) {
+                alert(`Financial report ${reportId} deleted successfully (demo)`);
+            }
+        }
+
+        function deleteResource(resourceId) {
+            if (confirm(`Are you sure you want to delete resource ${resourceId}?`)) {
+                alert(`Resource ${resourceId} deleted successfully (demo)`);
+            }
+        }
+
+        function deleteAssessment(assessmentId) {
+            if (confirm(`Are you sure you want to delete assessment ${assessmentId}?`)) {
+                alert(`Assessment ${assessmentId} deleted successfully (demo)`);
+            }
+        }
+
+        /**********************
+         * D3 Chart utilities
+         **********************/
+        function safeSelectSvg(id){
+            try {
+                const el = d3.select('#' + id);
+                if(el.empty()) return null;
+                return el;
+            } catch(e){
+                return null;
+            }
+        }
+
+        function clearSvg(svgSelection){
+            if(!svgSelection) return;
+            svgSelection.selectAll('*').remove();
+        }
+
+        /**********************
+         * STUDENT CHARTS
+         **********************/
+        function renderStudentCharts(){
+            renderStudentPerformanceChart();
+            renderStudentProgressChart();
+        }
+
+        function renderStudentPerformanceChart(){
+            const svg = safeSelectSvg('student-performance-chart');
+            if(!svg) return;
+            clearSvg(svg);
+
+            // sample data
+            const data = [
+                {week: 'Wk1', value: 75},
+                {week: 'Wk2', value: 82},
+                {week: 'Wk3', value: 68},
+                {week: 'Wk4', value: 90}
+            ];
+
+            const width = svg.node().clientWidth || 800;
+            const height = 300;
+            const margin = {top:20,right:20,bottom:30,left:40};
+            const innerW = width - margin.left - margin.right;
+            const innerH = height - margin.top - margin.bottom;
+
+            svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+            const x = d3.scaleBand().domain(data.map(d=>d.week)).range([0,innerW]).padding(0.2);
+            const y = d3.scaleLinear().domain([0,100]).nice().range([innerH,0]);
+
+            const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+            g.append('g').call(d3.axisLeft(y).ticks(5));
+            g.append('g').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(x));
+
+            g.selectAll('rect').data(data).enter().append('rect')
+                .attr('x', d=>x(d.week))
+                .attr('y', d=>y(d.value))
+                .attr('width', x.bandwidth())
+                .attr('height', d=>innerH - y(d.value))
+                .attr('fill', 'rgba(67,97,238,0.9)');
+        }
+
+        function renderStudentProgressChart(){
+            const svg = safeSelectSvg('student-progress-chart');
+            if(!svg) return;
+            clearSvg(svg);
+
+            // sample distribution data
+            const data = [
+                {label:'0-25', value:8},
+                {label:'26-50', value:22},
+                {label:'51-75', value:40},
+                {label:'76-100', value:30}
+            ];
+
+            const width = svg.node().clientWidth || 800;
+            const height = 300;
+            const radius = Math.min(width, height) / 2 - 30;
+            svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+            const g = svg.append('g').attr('transform', `translate(${width/2},${height/2})`);
+            const pie = d3.pie().value(d=>d.value);
+            const arc = d3.arc().innerRadius(0).outerRadius(radius);
+
+            const arcs = g.selectAll('.arc').data(pie(data)).enter().append('g').attr('class','arc');
+
+            const color = d3.scaleOrdinal().domain(data.map(d=>d.label)).range(['#4361ee','#4cc9f0','#f72585','#7209b7']);
+
+            arcs.append('path').attr('d', arc).attr('fill', d => color(d.data.label));
+            arcs.append('text').attr('transform', d => `translate(${arc.centroid(d)})`).attr('text-anchor','middle').attr('dy','0.35em').style('font-size','12px').text(d => d.data.label);
+        }
+
+        /**********************
+         * INSTRUCTOR CHARTS
+         **********************/
+        function renderInstructorCharts(){
+            renderInstructorProgressChart();
+        }
+
+        function renderInstructorProgressChart(){
+            const svg = safeSelectSvg('instructor-progress-chart');
+            if(!svg) return;
+            clearSvg(svg);
+
+            const data = [
+                {bucket:'0-25', value:5},
+                {bucket:'26-50', value:18},
+                {bucket:'51-75', value:45},
+                {bucket:'76-100', value:32}
+            ];
+
+            const width = svg.node().clientWidth || 800;
+            const height = 300;
+            const margin = {top:20,right:20,bottom:30,left:40};
+            const innerW = width - margin.left - margin.right;
+            const innerH = height - margin.top - margin.bottom;
+
+            svg.attr('viewBox', `0 0 ${width} ${height}`);
+            const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand().domain(data.map(d=>d.bucket)).range([0,innerW]).padding(0.25);
+            const y = d3.scaleLinear().domain([0,d3.max(data,d=>d.value)]).nice().range([innerH,0]);
+
+            g.append('g').call(d3.axisLeft(y).ticks(5));
+            g.append('g').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(x));
+
+            g.selectAll('rect').data(data).enter().append('rect')
+                .attr('x', d=>x(d.bucket))
+                .attr('width', x.bandwidth())
+                .attr('y', d=>y(d.value))
+                .attr('height', d=>innerH - y(d.value))
+                .attr('fill','rgba(76,201,240,0.9)');
+        }
+
+        /**********************
+         * ADMIN CHARTS
+         **********************/
+        function renderAdminCharts(){
+            renderAdminUserChart();
+        }
+
+        function renderAdminUserChart(){
+            const svg = safeSelectSvg('admin-user-chart');
+            if(!svg) return;
+            clearSvg(svg);
+
+            const data = [
+                {role:'Students', value:1254},
+                {role:'Instructors', value:86},
+                {role:'Admin', value:8}
+            ];
+
+            const width = svg.node().clientWidth || 800;
+            const height = 300;
+            const radius = Math.min(width, height) / 2 - 30;
+            svg.attr('viewBox', `0 0 ${width} ${height}`);
+            const g = svg.append('g').attr('transform', `translate(${width/2},${height/2})`);
+
+            const pie = d3.pie().value(d=>d.value);
+            const arc = d3.arc().innerRadius(0).outerRadius(radius);
+            const color = d3.scaleOrdinal().domain(data.map(d=>d.role)).range(['#4361ee','#3f37c9','#7209b7']);
+
+            const arcs = g.selectAll('.arc').data(pie(data)).enter().append('g').attr('class','arc');
+            arcs.append('path').attr('d', arc).attr('fill', d => color(d.data.role));
+            arcs.append('text').attr('transform', d => `translate(${arc.centroid(d)})`).attr('text-anchor','middle').attr('dy','0.35em').style('font-size','11px').text(d => d.data.role);
+        }
+
+        /**********************
+         * IT CHARTS
+         **********************/
+        function renderItCharts(){
+            // Example: render IT health chart (if container exists)
+            const svg = safeSelectSvg('it-health-chart');
+            if(!svg) return;
+            clearSvg(svg);
+
+            const data = [
+                {hour:0, val:150},{hour:4, val:180},{hour:8, val:300},{hour:12, val:200},{hour:16, val:100},{hour:20, val:170}
+            ];
+
+            const width = svg.node().clientWidth || 800;
+            const height = 300;
+            const margin = {top:20,right:20,bottom:30,left:40};
+            const innerW = width - margin.left - margin.right;
+            const innerH = height - margin.top - margin.bottom;
+
+            svg.attr('viewBox', `0 0 ${width} ${height}`);
+            const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleLinear().domain(d3.extent(data,d=>d.hour)).range([0,innerW]);
+            const y = d3.scaleLinear().domain([0,d3.max(data,d=>d.val)]).range([innerH,0]);
+
+            g.append('g').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(x).ticks(6).tickFormat(d=>d+'h'));
+            g.append('g').call(d3.axisLeft(y).ticks(5));
+
+            const line = d3.line().x(d=>x(d.hour)).y(d=>y(d.val));
+            g.append('path').datum(data).attr('fill','none').attr('stroke','#4361ee').attr('stroke-width',2).attr('d', line);
+        }
+
+        /**********************
+         * FINANCE CHARTS
+         **********************/
+        function renderFinanceCharts(){
+            const svg = safeSelectSvg('finance-revenue-chart');
+            if(!svg) return;
+            clearSvg(svg);
+
+            const data = [
+                {month:'Jan', value:8000},{month:'Feb', value:9500},{month:'Mar', value:12000},{month:'Apr', value:11000},
+                {month:'May', value:12400},{month:'Jun', value:13000}
+            ];
+
+            const width = svg.node().clientWidth || 800;
+            const height = 300;
+            const margin = {top:20,right:20,bottom:30,left:40};
+            const innerW = width - margin.left - margin.right;
+            const innerH = height - margin.top - margin.bottom;
+
+            svg.attr('viewBox', `0 0 ${width} ${height}`);
+            const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleBand().domain(data.map(d=>d.month)).range([0,innerW]).padding(0.2);
+            const y = d3.scaleLinear().domain([0,d3.max(data,d=>d.value)]).nice().range([innerH,0]);
+
+            g.append('g').call(d3.axisLeft(y).ticks(5));
+            g.append('g').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(x));
+
+            g.selectAll('rect').data(data).enter().append('rect')
+                .attr('x', d=>x(d.month))
+                .attr('y', d=>y(d.value))
+                .attr('width', x.bandwidth())
+                .attr('height', d=>innerH - y(d.value))
+                .attr('fill','rgba(67,97,238,0.9)');
+        }
+
+        /**********************
+         * Boot / initial
+         **********************/
+        // Optional: show login by default; if you want to auto show a dashboard for testing uncomment:
+        // showDashboard('student');
+
+        // Accessibility: allow pressing Enter to login
+        document.getElementById('role').addEventListener('keydown', (e) => {
+            if(e.key === 'Enter') document.getElementById('loginBtn').click();
+        });
+
+        // Helper functions for demo actions
+        function editProfile() {
+            alert('Edit Profile functionality would go here (demo)');
+        }
+
+        function viewStudentDetails(email) {
+            alert(`Viewing details for student: ${email} (demo)`);
+        }
+
+        function messageStudent(email) {
+            alert(`Sending message to: ${email} (demo)`);
+        }
+
+        function addResource() {
+            alert('Add Resource functionality would go here (demo)');
+        }
+    </script>
+</body>
+</html>
